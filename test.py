@@ -2,9 +2,7 @@ import openpyxl
 from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+import time
 
 # Load the workbook and select the sheet based on the current day
 workbook = openpyxl.load_workbook('4BeatsQ1.xlsx')
@@ -19,23 +17,19 @@ driver.get('http://www.google.com')
 def get_suggestions(keyword):
     print(f"Searching for: {keyword}")  # Debugging statement
 
-    search_box = driver.find_element(By.NAME, "q")
+    search_box = driver.find_element("name", "q")
     search_box.clear()
     search_box.send_keys(keyword)
-    search_box.send_keys(Keys.RETURN)
-    
-    # Wait for search results to load
-    try:
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.TAG_NAME, "h3"))
-        )
-    except Exception as e:
-        print(f"Error loading search results: {e}")
-        return None, None
+    time.sleep(2)  # Wait for suggestions to appear
 
-    # Capture the titles of the search results
-    titles = driver.find_elements(By.TAG_NAME, "h3")
-    suggestion_texts = [title.text for title in titles if title.text]
+    # Wait and fetch autocomplete suggestions
+    try:
+        suggestions_box = driver.find_element("xpath", "//ul[@role='listbox']")
+        suggestions = suggestions_box.find_elements("xpath", ".//li")
+        suggestion_texts = [s.text for s in suggestions if s.text]
+    except Exception as e:
+        print(f"Error loading autocomplete suggestions: {e}")
+        suggestion_texts = []
 
     print(f"Suggestions found: {suggestion_texts}")  # Debugging statement
 
@@ -64,6 +58,6 @@ for row in sheet.iter_rows(min_row=3, max_row=sheet.max_row, min_col=3, max_col=
     else:
         print(f"Empty cell found at row: {row[0].row}")
 
-# Save the updated workbook and close the WebDriver
+# Save the updated workbook
 workbook.save('4BeatsQ1.xlsx')
 driver.quit()
