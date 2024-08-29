@@ -2,7 +2,9 @@ import openpyxl
 from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
-import time
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 # Load the workbook and select the sheet based on the current day
 workbook = openpyxl.load_workbook('4BeatsQ1.xlsx')
@@ -17,14 +19,22 @@ driver.get('http://www.google.com')
 def get_suggestions(keyword):
     print(f"Searching for: {keyword}")  # Debugging statement
 
-    search_box = driver.find_element("name", "q")
+    search_box = driver.find_element(By.NAME, "q")
     search_box.clear()
     search_box.send_keys(keyword)
     search_box.send_keys(Keys.RETURN)
-    time.sleep(2)
+    
+    # Wait for search results to load
+    try:
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.TAG_NAME, "h3"))
+        )
+    except Exception as e:
+        print(f"Error loading search results: {e}")
+        return None, None
 
-    # Capture the titles of the search results, which are generally within 'h3' tags
-    titles = driver.find_elements("tag name", "h3")
+    # Capture the titles of the search results
+    titles = driver.find_elements(By.TAG_NAME, "h3")
     suggestion_texts = [title.text for title in titles if title.text]
 
     print(f"Suggestions found: {suggestion_texts}")  # Debugging statement
